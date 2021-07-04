@@ -1,3 +1,4 @@
+import json
 import os
 
 import flask
@@ -15,13 +16,20 @@ def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
     setup_db(app)
-    CORS(
-        app, resources={r"*": {"origins": "*"}}
-    )  # Default config, CORS enabled on all routes, origins, methods.
+    CORS(app)  # Default config, CORS enabled on all routes, origins, methods.
 
-    # CORS Headers
+    # Request CORS Headers
     @app.after_request
     def after_request(response):
+        """
+
+        Args:
+            response:
+
+        Returns:
+            response after adding Access Control.
+
+        """
         allowed_headers = "Content-Type,Authorization,true"
         response.headers.add("Access-Control-Allow-Headers", allowed_headers)
         allowed_methods = "GET,PUT,POST,DELETE,OPTIONS"
@@ -29,15 +37,29 @@ def create_app(test_config=None):
         return response
 
     def paginate_questions(selection):
+        """
+
+        Args:
+            selection:
+
+        Returns:
+            A list of 10 questions formatted in JSON form.
+
+        """
         page = request.args.get("page", 1, type=int)
         start = (page - 1) * QUESTIONS_PER_PAGE
         end = start + QUESTIONS_PER_PAGE
-        questions = [question.format() for question in selection]
-        current_questions = questions[start:end]
-        return current_questions
+        formatted_questions = [question.format() for question in selection]
+        paginated_questions = formatted_questions[start:end]
+        return paginated_questions
 
     @app.route("/categories")
     def get_categories():
+        """
+        GET request to retrieve a list of all categories.
+        Returns: A list of all categories in {"id": "type} format.
+
+        """
         categories = Category.query.order_by(Category.id).all()
         formatted_categories = {
             f"{category.id}": f"{category.type}" for category in categories
@@ -47,14 +69,23 @@ def create_app(test_config=None):
 
     @app.route("/questions")
     def get_questions():
+        """
+        GET request to retrieve list of all questions.
+        Returns: A json response with the following contents:
+        - A list of 10 questions.
+        - The total number of questions.
+        - The categories available.
+        - The current category (default = None).
+
+        """
         questions = Question.query.order_by(Question.id).all()
-        current_questions = paginate_questions(questions)
-        if len(current_questions) == 0:
+        paginated_questions = paginate_questions(questions)
+        if len(paginated_questions) == 0:
             abort(404)
 
         return jsonify(
             {
-                "questions": current_questions,
+                "questions": paginated_questions,
                 "total_questions": len(questions),
                 "categories": get_categories().json["categories"],
                 "current_category": None,  # According to a mentor in https://knowledge.udacity.com/questions/82424.
@@ -63,6 +94,14 @@ def create_app(test_config=None):
 
     @app.route("/questions/<int:question_id>", methods=["DELETE"])
     def delete_question(question_id):
+        """
+        DELETE request to delete a question by id.
+        Args:
+            question_id: The id of the question to be deleted.
+
+        Returns:
+            flask.Response object with status code = 200.
+        """
         try:
             question = Question.query.get(question_id)
             question.delete() if question is not None else abort(404)
@@ -70,27 +109,49 @@ def create_app(test_config=None):
         except BaseException:
             abort(422)
 
-    """
-  @TODO: 
-  Create an endpoint to POST a new question, 
-  which will require the question and answer text, 
-  category, and difficulty score.
+    @app.route("/questions", methods=["POST"])
+    def add_question_or_search():
+        """
+        POST request to add new question.
+        Also implements search functionality by question's string.
+        Returns:
+            Adding new question:
+                json.dumps({"success": True}), 201, {"ContentType": "application/json"})
+            Searching: A json response body with the following contents:
+                - A list of 10 (maximum) matching questions.
+                - Total number of matching questions.
+                - current_category (default = None).
 
-  TEST: When you submit a question on the "Add" tab, 
-  the form will clear and the question will appear at the end of the last page
-  of the questions list in the "List" tab.  
-  """
+        """
+        request_body = request.get_json()
+        try:
+            if search_term := request_body.get("searchTerm", None):
+                matching_questions = (
+                    Question.query.order_by(Question.id)
+                    .filter(Question.question.ilike(f"%{search_term}%"))
+                    .all()
+                )
+                paginated_questions = paginate_questions(matching_questions)
+                return jsonify(
+                    {
+                        "questions": paginated_questions
+                        if len(matching_questions)
+                        else [],
+                        "total_questions": len(matching_questions),
+                        "current_category": None,
+                    }
+                )
+            else:
+                question = Question(**request_body)
+                question.insert()
+                return (
+                    json.dumps({"success": True}),
+                    201,
+                    {"ContentType": "application/json"},
+                )
 
-    """
-  @TODO: 
-  Create a POST endpoint to get questions based on a search term. 
-  It should return any questions for whom the search term 
-  is a substring of the question. 
-
-  TEST: Search by any phrase. The questions list will update to include 
-  only question that include that string within their question. 
-  Try using the word "title" to start. 
-  """
+        except BaseException:
+            abort(422)
 
     """
   @TODO: 
