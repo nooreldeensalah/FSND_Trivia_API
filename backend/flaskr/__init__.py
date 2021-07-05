@@ -117,7 +117,8 @@ def create_app(test_config=None):
         """
         request_body = request.get_json()
         try:
-            if search_term := request_body.get("searchTerm", None):
+            if (search_term := request_body.get("searchTerm", None)) is not None:
+                # If the search_term is empty, it will retrieve all questions.
                 matching_questions = (
                     Question.query.order_by(Question.id)
                     .filter(Question.question.ilike(f"%{search_term}%"))
