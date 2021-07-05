@@ -84,6 +84,9 @@ class TriviaTestCase(unittest.TestCase):
         """
     # NOTE: THIS TEST WILL ONLY SUCCEED ONCE, YOU HAVE TO RE-POPULATE THE DATABASE IN ORDER TO TEST AGAIN.
     def test_delete_existing_question(self):
+        """
+        This test will only succeed one time
+        """
         response = self.client.delete("/questions/2")
 
         self.assertEqual(response.status_code, 200)

@@ -107,7 +107,8 @@ def create_app(test_config=None):
                 - current_category (default = None).
         """
         request_body = request.get_json()
-        if (search_term := request_body.get("searchTerm", None)) is not None:
+        search_term = request_body.get("searchTerm", None)
+        if search_term is not None:
             # If the search_term is empty, it will retrieve all questions.
             matching_questions = (
                 Question.query.order_by(Question.id)
