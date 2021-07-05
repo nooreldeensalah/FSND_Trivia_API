@@ -60,8 +60,7 @@ class QuestionView extends Component {
 
   getByCategory= (id) => {
     $.ajax({
-      url: `/categories/${id}/questions`, //TODO: update request URL
-      type: "GET",
+      url: `/categories/${id}/questions`,
       success: (result) => {
         this.setState({
           questions: result.questions,
@@ -78,7 +77,7 @@ class QuestionView extends Component {
 
   submitSearch = (searchTerm) => {
     $.ajax({
-      url: `/questions`, //TODO: update request URL
+      url: `/questions`,
       type: "POST",
       dataType: 'json',
       contentType: 'application/json',

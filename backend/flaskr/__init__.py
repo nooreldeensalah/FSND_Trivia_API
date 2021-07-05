@@ -1,6 +1,4 @@
-import json
 import random
-
 import flask
 from flask import Flask, request, abort, jsonify
 from flask_cors import CORS
@@ -116,38 +114,32 @@ def create_app(test_config=None):
                 - current_category (default = None).
         """
         request_body = request.get_json()
-        try:
-            if (search_term := request_body.get("searchTerm", None)) is not None:
-                # If the search_term is empty, it will retrieve all questions.
-                matching_questions = (
-                    Question.query.order_by(Question.id)
-                    .filter(Question.question.ilike(f"%{search_term}%"))
-                    .all()
-                )
-                paginated_questions = paginate_questions(matching_questions)
-                return jsonify(
-                    {
-                        "questions": paginated_questions
-                        if len(matching_questions)
-                        else [],
-                        "total_questions": len(matching_questions),
-                        "current_category": None,
-                    }
-                )
-            else:
-                # check if both question and answer fields are empty
-                if not request_body["question"] or not request_body["answer"]:
-                    return flask.Response(status=400)
-                # If both question and answer fields are non-empty, insert the question.
+        if (search_term := request_body.get("searchTerm", None)) is not None:
+            # If the search_term is empty, it will retrieve all questions.
+            matching_questions = (
+                Question.query.order_by(Question.id)
+                .filter(Question.question.ilike(f"%{search_term}%"))
+                .all()
+            )
+            paginated_questions = paginate_questions(matching_questions)
+            return jsonify(
+                {
+                    "questions": paginated_questions if len(matching_questions) else [],
+                    "total_questions": len(matching_questions),
+                    "current_category": None,
+                }
+            )
+        else:
+            # Checks if both question and answer fields are empty.
+            if not request_body["question"] or not request_body["answer"]:
+                abort(400)
+            try:
+                # Try adding the question to the database.
                 question = Question(**request_body)
                 question.insert()
-                return (
-                    json.dumps({"success": True}),
-                    201,
-                    {"ContentType": "application/json"},
-                )
-        except BaseException:
-            abort(422)
+                return jsonify({"success": True}), 201
+            except BaseException:
+                abort(422)
 
     @app.route("/categories/<int:category_id>/questions")
     def get_questions_by_category(category_id):
@@ -207,10 +199,20 @@ def create_app(test_config=None):
             }
         )
 
-    """
-  @TODO: 
-  Create error handlers for all expected errors 
-  including 404 and 422. 
-  """
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({"error": 404, "message": "RESOURCE NOT FOUND"}), 404
+
+    @app.errorhandler(422)
+    def unprocessable(error):
+        return jsonify({"error": 422, "message": "UNPROCESSABLE ENTITY"}), 422
+
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({"error": 400, "message": "BAD REQUEST"}), 400
+
+    @app.errorhandler(500)
+    def server_error(error):
+        return jsonify({"error": 500, "message": "SERVER ERROR"}), 500
 
     return app
