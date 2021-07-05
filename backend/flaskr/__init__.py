@@ -93,12 +93,9 @@ def create_app(test_config=None):
         Returns:
             flask.Response object with status code = 200.
         """
-        try:
-            question = Question.query.get(question_id)
-            question.delete() if question is not None else abort(404)
-            return flask.Response(status=200)
-        except BaseException:
-            abort(422)
+        question = Question.query.get(question_id)
+        question.delete() if question is not None else abort(404)
+        return flask.Response(status=200)
 
     @app.route("/questions", methods=["POST"])
     def add_question_or_search():
@@ -199,17 +196,21 @@ def create_app(test_config=None):
             }
         )
 
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({"error": 400, "message": "BAD REQUEST"}), 400
+
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({"error": 404, "message": "RESOURCE NOT FOUND"}), 404
 
+    @app.errorhandler(405)
+    def not_found(error):
+        return jsonify({"error": 405, "message": "METHOD NOT ALLOWED"}), 405
+
     @app.errorhandler(422)
     def unprocessable(error):
         return jsonify({"error": 422, "message": "UNPROCESSABLE ENTITY"}), 422
-
-    @app.errorhandler(400)
-    def bad_request(error):
-        return jsonify({"error": 400, "message": "BAD REQUEST"}), 400
 
     @app.errorhandler(500)
     def server_error(error):
