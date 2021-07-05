@@ -1,19 +1,16 @@
 import json
-import os
+import random
 
 import flask
 from flask import Flask, request, abort, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-import random
-
 from models import setup_db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 
 
 def create_app(test_config=None):
-    # create and configure the app
+    # Create and configure the app
     app = Flask(__name__)
     setup_db(app)
     CORS(app)  # Default config, CORS enabled on all routes, origins, methods.
@@ -38,13 +35,11 @@ def create_app(test_config=None):
 
     def paginate_questions(selection):
         """
-
         Args:
             selection:
 
         Returns:
             A list of 10 questions formatted in JSON form.
-
         """
         page = request.args.get("page", 1, type=int)
         start = (page - 1) * QUESTIONS_PER_PAGE
@@ -58,7 +53,6 @@ def create_app(test_config=None):
         """
         GET request to retrieve a list of all categories.
         Returns: A list of all categories in {"id": "type} format.
-
         """
         categories = Category.query.order_by(Category.id).all()
         formatted_categories = {
@@ -76,7 +70,6 @@ def create_app(test_config=None):
         - The total number of questions.
         - The categories available.
         - The current category (default = None).
-
         """
         questions = Question.query.order_by(Question.id).all()
         paginated_questions = paginate_questions(questions)
@@ -121,7 +114,6 @@ def create_app(test_config=None):
                 - A list of 10 (maximum) matching questions.
                 - Total number of matching questions.
                 - current_category (default = None).
-
         """
         request_body = request.get_json()
         try:
@@ -142,6 +134,10 @@ def create_app(test_config=None):
                     }
                 )
             else:
+                # check if both question and answer fields are empty
+                if not request_body["question"] or not request_body["answer"]:
+                    return flask.Response(status=400)
+                # If both question and answer fields are non-empty, insert the question.
                 question = Question(**request_body)
                 question.insert()
                 return (
@@ -149,7 +145,6 @@ def create_app(test_config=None):
                     201,
                     {"ContentType": "application/json"},
                 )
-
         except BaseException:
             abort(422)
 
@@ -178,17 +173,38 @@ def create_app(test_config=None):
             }
         )
 
-    """
-  @TODO: 
-  Create a POST endpoint to get questions to play the quiz. 
-  This endpoint should take category and previous question parameters 
-  and return a random questions within the given category, 
-  if provided, and that is not one of the previous questions. 
-
-  TEST: In the "Play" tab, after a user selects "All" or a category,
-  one question at a time is displayed, the user is allowed to answer
-  and shown whether they were correct or not. 
-  """
+    @app.route("/quizzes", methods=["POST"])
+    def play():
+        """
+        POST request to play the trivia game.
+        Returns:
+            - A random question from a chosen category, or from all categories.
+            - A list of previous questions ids, to ensure to repetition.
+        """
+        request_payload = request.get_json()
+        category = request_payload["quiz_category"]
+        previous_questions = request_payload["previous_questions"]
+        if category["id"] == 0:  # From all categories.
+            while True:
+                # FIXME: Ensures no repeated questions, but the application freezes when the questions end.
+                random_question = random.choice(Question.query.all())
+                if random_question.id not in previous_questions:
+                    break
+        else:
+            while True:
+                # FIXME: Ensures no repeated questions, but the application freezes when the questions end.
+                random_question = random.choice(
+                    Question.query.filter(Question.category == category["id"]).all()
+                )
+                if random_question.id not in previous_questions:
+                    break
+        previous_questions.append(random_question.id)
+        return jsonify(
+            {
+                "question": random_question.format(),
+                "previous_questions": previous_questions,
+            }
+        )
 
     """
   @TODO: 
