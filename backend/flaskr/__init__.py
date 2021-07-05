@@ -17,13 +17,10 @@ def create_app(test_config=None):
     @app.after_request
     def after_request(response):
         """
-
         Args:
-            response:
-
+            response.
         Returns:
             response after adding Access Control.
-
         """
         allowed_headers = "Content-Type,Authorization,true"
         response.headers.add("Access-Control-Allow-Headers", allowed_headers)
@@ -35,7 +32,6 @@ def create_app(test_config=None):
         """
         Args:
             selection:
-
         Returns:
             A list of 10 questions formatted in JSON form.
         """
@@ -49,8 +45,8 @@ def create_app(test_config=None):
     @app.route("/categories")
     def get_categories():
         """
-        GET request to retrieve a list of all categories.
-        Returns: A list of all categories in {"id": "type} format.
+        GET request to retrieve a dictionary object of all categories.
+        Returns: A dictionary of all categories in {"id": "type} format.
         """
         categories = Category.query.order_by(Category.id).all()
         formatted_categories = {
