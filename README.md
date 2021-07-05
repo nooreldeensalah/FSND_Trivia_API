@@ -1,3 +1,4 @@
+>Note: The API documentation can be found in [./backend/README.md](./backend/README.md)
 # Full Stack API Final Project
 
 
