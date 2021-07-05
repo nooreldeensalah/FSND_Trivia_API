@@ -127,8 +127,8 @@ def create_app(test_config=None):
                 }
             )
         else:
-            # Checks if both question and answer fields are empty.
-            if not request_body["question"] or not request_body["answer"]:
+            # Check if any field is empty in the request body
+            if any([not request_body[key] for key in request_body]):
                 abort(400)
             try:
                 # Try adding the question to the database.

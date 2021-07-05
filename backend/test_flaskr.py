@@ -116,8 +116,8 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertIsNotNone(new_question)
 
-    def test_adding_question_with_empty_question_field(self):
-        # Testing for both fields empty, or with the answer field empty is exactly the same.
+    def test_adding_question_with_empty_field(self):
+        # Testing for any empty field (question, answer, category, difficulty) is done in a similar manner.
         response = self.client.post(
             "/questions",
             json={
