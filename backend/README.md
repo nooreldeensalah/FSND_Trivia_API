@@ -47,7 +47,7 @@ The API will return four error types when requests fail:
 ```
 #### GET 'questions'
 - Retrieves a list of questions paginated in groups of 10.
-- Request Arguments: Optional page number URL argument starting from 1.
+- Request Arguments: None.
   ```
   curl localhost:5000/questions?page=1
   ```
@@ -210,7 +210,7 @@ The API will return four error types when requests fail:
 2. **Virtual Enviornment** - We recommend working within a virtual environment whenever using Python for projects. This keeps your dependencies for each project separate and organaized. Instructions for setting up a virual enviornment for your platform can be found in the [python docs](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
 
 
-3. **PIP Dependencies** - Once you have your virtual environment setup and running, install dependencies by naviging to the `/backend` directory and running:
+3. **PIP Dependencies** - Once you have your virtual environment setup and running, install dependencies by naviging to the root directory and running:
 ```bash
 pip install -r requirements.txt
 ```
